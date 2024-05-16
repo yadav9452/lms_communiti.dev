@@ -1,38 +1,44 @@
 import nodemailer, { Transporter } from "nodemailer";
-require("dotenv").config();
 import ejs from "ejs";
 import path from "path";
 
-interface emailOptions {
+interface EmailOptions {
   email: string;
   subject: string;
   template: string;
   data: { [key: string]: any };
 }
 
-const sendMail = async (options: emailOptions): Promise<void> => {
-  const transporter: Transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || "587"),
-    service: process.env.SMTP_SERVICE,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-  const { email, subject, template, data } = options;
-  // get the path to the email template file
-  const templatePath = path.join(__dirname, "../mails", template);
-  //render the email template with ejs
+const sendMail = async (options: EmailOptions): Promise<void> => {
+  try {
+    const transporter: Transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST?.trim(),
+      port: parseInt(process.env.SMTP_PORT?.trim() || "465"),
+      service: process.env.SMTP_SERVICE?.trim(),
+      auth: {
+        user: process.env.SMTP_USER?.trim(),
+        pass: process.env.SMTP_PASSWORD?.trim(),
+      },
+    });
 
-  const html: string = await ejs.renderFile(templatePath, data);
-  const mailOptions = {
-    from: process.env.SMTP_MAIL,
-    to: email,
-    subject,
-    html,
-  };
-  await transporter.sendMail(mailOptions);
+    const { email, subject, template, data } = options;
+    const templatePath = path.join(__dirname, "../mails", template);
+    const html: string = await ejs.renderFile(templatePath, data);
+
+    const mailOptions = {
+      from: process.env.SMTP_MAIL,
+      to: email,
+      subject,
+      html,
+    };
+
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    // Log the error for debugging purposes
+    console.error("Error occurred while sending email:", error);
+    // Throw the error to be caught by the caller or error middleware
+    throw error;
+  }
 };
 
 export default sendMail;

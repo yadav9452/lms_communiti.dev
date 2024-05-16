@@ -4,10 +4,9 @@ import UserModel, { IUser } from "../models/user.model";
 import ErrorHandler from "../utlis/errorHandler";
 import { catchAsyncError } from "../middleware/catchAsyncErrors";
 import jwt, { Secret } from "jsonwebtoken";
-import ejs from "ejs";
 import path from "path";
 import sendMail from "../utlis/sendMail";
-
+import ejs from "ejs";
 interface IRegistrationBody {
   name: string;
   email: string;
@@ -31,8 +30,9 @@ export const registrationUser = catchAsyncError(
         password,
       };
       const activationToken = createActivationToken(user);
-      //   console.log(activationToken);
+      //   console.log(activationToke n);
       const activationcode = activationToken.activationCode;
+      // console.log(activationcode);
       const data = { user: { name: user.name }, activationcode };
       const html = await ejs.renderFile(
         path.join(__dirname, "../mails/activation-mail.ejs"),
@@ -75,3 +75,48 @@ export const createActivationToken = (user: any): IActivationToken => {
   );
   return { token, activationCode };
 };
+
+//activate user
+
+interface IActivationRequest {
+  activation_token: string;
+  activation_code: string;
+}
+export const activateUser = catchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { activation_token, activation_code } =
+        req.body as IActivationRequest;
+
+      const newUser: { user: IUser; activationCode: string } = jwt.verify(
+        activation_token,
+        process.env.ACTIVATION_SECRET as string
+      ) as { user: IUser; activationCode: string };
+
+      if (newUser.activationCode !== activation_code) {
+        return next(new ErrorHandler("Invalid activation code", 400));
+      }
+
+      const { name, email, password } = newUser.user;
+
+      const exitUser = await UserModel.findOne({ email });
+      if (exitUser) {
+        return next(new ErrorHandler("User already exists", 400));
+      }
+
+      const user = await UserModel.create({
+        name,
+        email,
+        password,
+      });
+      res.status(201).json({
+        success: true,
+      });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+function next(arg0: ErrorHandler) {
+  throw new Error("Function not implemented.");
+}
