@@ -3,10 +3,17 @@ import { Request, Response, NextFunction } from "express";
 import UserModel, { IUser } from "../models/user.model";
 import ErrorHandler from "../utlis/errorHandler";
 import { catchAsyncError } from "../middleware/catchAsyncErrors";
-import jwt, { Secret } from "jsonwebtoken";
+import jwt, { JwtPayload, Secret } from "jsonwebtoken";
 import path from "path";
 import sendMail from "../utlis/sendMail";
 import ejs from "ejs";
+import {
+  accessTokenOptions,
+  refreshTokenOptions,
+  sendToken,
+} from "../utlis/jst";
+import { redis } from "../utlis/redis";
+import { getUserById } from "../services/user.service";
 interface IRegistrationBody {
   name: string;
   email: string;
@@ -120,3 +127,149 @@ export const activateUser = catchAsyncError(
 function next(arg0: ErrorHandler) {
   throw new Error("Function not implemented.");
 }
+
+//login user
+interface ILoginRequest {
+  email: string;
+  password: string;
+}
+
+export const loginUser = catchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return next(
+          new ErrorHandler("Please enter a valid email and password.", 400)
+        );
+      }
+
+      const user = await UserModel.findOne({ email }).select("+password");
+      if (!user) {
+        return next(new ErrorHandler("Invalid User", 400));
+      }
+      const isPasswordMatch = await user.comparePassword(password);
+      if (!isPasswordMatch) {
+        return next(new ErrorHandler("Invalid Password", 400));
+      }
+      sendToken(user, 200, res);
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+//logout user
+export const logoutUser = catchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      // Options for clearing cookies
+      const cookieOptions = {
+        httpOnly: true,
+        sameSite: "lax" as const,
+        secure: process.env.NODE_ENV === "production",
+      };
+
+      // Clear the cookies
+      res.clearCookie("access_token", cookieOptions);
+      res.clearCookie("refresh_token", cookieOptions);
+
+      // Delete the user session from Redis
+      const userId = req.user?._id || "";
+      await redis.del(userId);
+
+      // Send response
+      res.status(200).json({
+        success: true,
+        message: "User logged out",
+      });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+//update access token
+export const updateAccessToken = catchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const refresh_token = req.cookies.refresh_token as string;
+      const decoded = jwt.verify(
+        refresh_token,
+        process.env.REFRESH_TOKEN as string
+      ) as JwtPayload;
+
+      const message = "Couldn't refresh token";
+
+      if (!decoded) {
+        return next(new ErrorHandler(message, 400));
+      }
+
+      const session = await redis.get(decoded.id as string);
+
+      if (!session) {
+        return next(new ErrorHandler(message, 400));
+      }
+
+      const user = JSON.parse(session);
+
+      const accessToken = jwt.sign(
+        { id: user.id },
+        process.env.ACCESS_TOKEN as string,
+        {
+          expiresIn: "5m",
+        }
+      );
+
+      const refreshToken = jwt.sign(
+        { id: user._id },
+        process.env.REFRESH_TOKEN as string,
+        {
+          expiresIn: "3d",
+        }
+      );
+
+      res.cookie("access_token", accessToken, accessTokenOptions);
+      res.cookie("refresh_token", refreshToken, refreshTokenOptions);
+
+      res.status(200).json({ status: "success", accessToken });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+// get user information
+export const getUserInfo = catchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const userId = req?.user?._id;
+      console.log(userId);
+      getUserById(userId, res);
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+interface ISocialAuthBody {
+  email: string;
+  name: string;
+  avatar: string;
+  password: string;
+}
+// social authentication
+export const SocialAuth = catchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { email, name, avatar } = req.body as ISocialAuthBody;
+      const user = await UserModel.findOne({ email });
+      if (!user) {
+        const newUser = await UserModel.create({ email, name, avatar });
+        sendToken(newUser, 200, res);
+      }
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
