@@ -3,6 +3,7 @@ import { authorizeRoles, isAuthenticated } from "../middleware/auth";
 import {
   editCourses,
   getAllCourseWithoutPurchasing,
+  getCourseContentByUser,
   getSingleCourseWithoutPurchasing,
   uploadCourses,
 } from "../controllers/course.controller";
@@ -27,5 +28,10 @@ courseRouter.get("/get-course/:id", getSingleCourseWithoutPurchasing);
 
 // get all the  course without purchasing
 courseRouter.get("/get-courses", getAllCourseWithoutPurchasing);
+courseRouter.get(
+  "/get-course-content/:id",
+  isAuthenticated,
+  getCourseContentByUser
+);
 
 export default courseRouter;
