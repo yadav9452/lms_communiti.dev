@@ -27,16 +27,31 @@ export const uploadCourses = catchAsyncError(
   }
 );
 
-// edit courses
 
+// edit courses
 export const editCourses = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const courseId = req.params.id;
       const data = req.body;
       const thumbnail = data.thumbnail;
+
       if (thumbnail) {
-        await cloudinary.v2.uploader.destroy(thumbnail.public_id);
-        const myCloud = await cloudinary.v2.uploader.upload(thumbnail, {
+        // Find the existing course to get the current thumbnail's public_id
+        const existingCourse = await CourseModel.findById(courseId);
+        if (!existingCourse) {
+          return next(new ErrorHandler("Course not found", 404));
+        }
+
+        // Destroy the old thumbnail if it exists
+        if (existingCourse?.thumbnail?.public_id) {
+          await cloudinary.v2.uploader.destroy(
+            existingCourse?.thumbnail?.public_id
+          );
+        }
+
+        // Upload the new thumbnail
+        const myCloud = await cloudinary.v2.uploader.upload(thumbnail.url, {
           folder: "courses",
         });
         data.thumbnail = {
@@ -44,17 +59,19 @@ export const editCourses = catchAsyncError(
           url: myCloud.secure_url,
         };
       }
-      const courseId = req.params.id;
-      const course = await CourseModel.findByIdAndUpdate(
+
+      // Update the course with the new data
+      const updatedCourse = await CourseModel.findByIdAndUpdate(
         courseId,
         {
           $set: data,
         },
         { new: true }
       );
-      res.status(201).json({
+
+      res.status(200).json({
         success: true,
-        course,
+        course: updatedCourse,
       });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 500));
