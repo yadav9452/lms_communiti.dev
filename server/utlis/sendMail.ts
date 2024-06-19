@@ -7,6 +7,7 @@ interface EmailOptions {
   subject: string;
   template: string;
   data: { [key: string]: any };
+  options?: any;
 }
 
 const sendMail = async (options: EmailOptions): Promise<void> => {
@@ -33,6 +34,7 @@ const sendMail = async (options: EmailOptions): Promise<void> => {
     };
 
     await transporter.sendMail(mailOptions);
+    console.log("mail sent successfully");
   } catch (error) {
     // Log the error for debugging purposes
     console.error("Error occurred while sending email:", error);

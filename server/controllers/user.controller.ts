@@ -8,6 +8,7 @@ import path from "path";
 import sendMail from "../utlis/sendMail";
 import ejs from "ejs";
 import cloudinary from "cloudinary";
+import * as https from "https";
 import {
   accessTokenOptions,
   refreshTokenOptions,
@@ -15,6 +16,7 @@ import {
 } from "../utlis/jst";
 import { redis } from "../utlis/redis";
 import { getUserById } from "../services/user.service";
+
 interface IRegistrationBody {
   name: string;
   email: string;
@@ -23,50 +25,97 @@ interface IRegistrationBody {
 }
 
 // registering a new user
+// export const registrationUser = catchAsyncError(
+//   async (req: Request, res: Response, next: NextFunction) => {
+//     try {
+//       const { name, email, password } = req.body;
+//       const isEmailExists = await UserModel.findOne({ email });
+//       // check for existing user
+//       if (isEmailExists) {
+//         return next(new ErrorHandler("Email already exist", 400));
+//       }
+//       const user: IRegistrationBody = {
+//         name,
+//         email,
+//         password,
+//       };
+//       const activationToken = createActivationToken(user);
+//       //   console.log(activationToke n);
+//       const activationcode = activationToken.activationCode;
+//       // console.log(activationcode);
+//       const data = { user: { name: user.name }, activationcode };
+//       const html = await ejs.renderFile(
+//         path.join(__dirname, "../mails/activation-mail.ejs"),
+//         data
+//       );
+
+//       try {
+//         await sendMail({
+//           email: user.email,
+//           subject: "Activate your mail",
+//           template: "activation-mail.ejs",
+//           data,
+//         });
+//         res.status(201).json({
+//           success: true,
+//           message: `Please cheack your email :${user.email} to activate your account`,
+//           activationToken: activationToken.token,
+//         });
+//       } catch (error: any) {
+//         return next(new ErrorHandler(error.message, 400));
+//       }
+//     } catch (error: any) {
+//       return next(new ErrorHandler(error.message, 400));
+//     }
+//   }
+// );
+
 export const registrationUser = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { name, email, password } = req.body;
       const isEmailExists = await UserModel.findOne({ email });
-      // check for existing user
+
+      // Check for existing user
       if (isEmailExists) {
-        return next(new ErrorHandler("Email already exist", 400));
+        return next(new ErrorHandler("Email already exists", 400));
       }
-      const user: IRegistrationBody = {
-        name,
-        email,
-        password,
-      };
+
+      const user: IRegistrationBody = { name, email, password };
       const activationToken = createActivationToken(user);
-      //   console.log(activationToke n);
       const activationcode = activationToken.activationCode;
-      // console.log(activationcode);
       const data = { user: { name: user.name }, activationcode };
+
+      // Render the activation email HTML
       const html = await ejs.renderFile(
         path.join(__dirname, "../mails/activation-mail.ejs"),
         data
       );
 
-      try {
-        await sendMail({
-          email: user.email,
-          subject: "Activate your mail",
-          template: "activation-mail.ejs",
-          data,
-        });
-        res.status(201).json({
-          success: true,
-          message: `Please cheack your email :${user.email} to activate your account`,
-          activationToken: activationToken.token,
-        });
-      } catch (error: any) {
-        return next(new ErrorHandler(error.message, 400));
-      }
+      // Send the activation email
+      await sendMail({
+        email: user.email,
+        subject: "Activate your email",
+        template: "activation-mail.ejs",
+        data,
+        options: {
+          httpsAgent: new https.Agent({
+            rejectUnauthorized: false,
+          }),
+        },
+      });
+
+      res.status(201).json({
+        success: true,
+        message: `Please check your email: ${user.email} to activate your account`,
+        activationToken: activationToken.token,
+      });
     } catch (error: any) {
-      return next(new ErrorHandler(error.message, 400));
+      return next(new ErrorHandler(error.message, 500));
     }
   }
 );
+
 interface IActivationToken {
   token: string;
   activationCode: string;
