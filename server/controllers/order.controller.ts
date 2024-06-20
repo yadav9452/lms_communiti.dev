@@ -48,6 +48,7 @@ export const createOrder = catchAsyncError(
           }),
         },
       };
+      console.log(mailData);
       const html = await ejs.renderFile(
         path.join(__dirname, "../mails/order-confirmation.ejs"),
         { order: mailData }
@@ -60,6 +61,7 @@ export const createOrder = catchAsyncError(
             template: "order-confirmation.ejs",
             data: mailData,
           });
+          console.log("mail send successful");
         }
         user?.courses.push(course?._id);
         await user?.save();
@@ -69,14 +71,12 @@ export const createOrder = catchAsyncError(
           title: "New order confirmation",
           message: `you have a new order confirmation from ${course?._id}`,
         });
-
-        course.purchased ? (course.purchased += 1) : course.purchased;
-        await course?.save();
-
-        newOrderService(data, res, next);
       } catch (error: any) {
         return next(new ErrorHandler(error.message, 404));
       }
+      course.purchased ? (course.purchased += 1) : course.purchased;
+      await course?.save();
+      newOrderService(data, res, next);
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 500));
     }

@@ -20,6 +20,10 @@ const sendMail = async (options: EmailOptions): Promise<void> => {
         user: process.env.SMTP_USER?.trim(),
         pass: process.env.SMTP_PASSWORD?.trim(),
       },
+      tls: {
+        // do not fail on invalid certs
+        rejectUnauthorized: false,
+      },
     });
 
     const { email, subject, template, data } = options;
