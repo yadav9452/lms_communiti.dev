@@ -3,6 +3,7 @@ import {
   SocialAuth,
   UpdateUserInfo,
   activateUser,
+  getAllUsersAnalytics,
   getUserInfo,
   loginUser,
   logoutUser,
@@ -36,5 +37,11 @@ userRouter.put("/update-user-info", isAuthenticated, UpdateUserInfo);
 userRouter.put("/update-user-password", isAuthenticated, updateUserPassword);
 
 userRouter.put("/update-user-avatar", isAuthenticated, updateUserAvatar);
+userRouter.get(
+  "/get-all-users",
+  isAuthenticated,
+  authorizeRoles("admin"),
+  getAllUsersAnalytics
+);
 
 export default userRouter;

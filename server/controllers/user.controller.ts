@@ -15,7 +15,7 @@ import {
   sendToken,
 } from "../utlis/jst";
 import { redis } from "../utlis/redis";
-import { getUserById } from "../services/user.service";
+import { getAllUsersService, getUserById } from "../services/user.service";
 
 interface IRegistrationBody {
   name: string;
@@ -69,52 +69,6 @@ export const registrationUser = catchAsyncError(
     }
   }
 );
-
-// export const registrationUser = catchAsyncError(
-//   async (req: Request, res: Response, next: NextFunction) => {
-//     try {
-//       const { name, email, password } = req.body;
-//       const isEmailExists = await UserModel.findOne({ email });
-
-//       // Check for existing user
-//       if (isEmailExists) {
-//         return next(new ErrorHandler("Email already exists", 400));
-//       }
-
-//       const user: IRegistrationBody = { name, email, password };
-//       const activationToken = createActivationToken(user);
-//       const activationcode = activationToken.activationCode;
-//       const data = { user: { name: user.name }, activationcode };
-
-//       // Render the activation email HTML
-//       const html = await ejs.renderFile(
-//         path.join(__dirname, "../mails/activation-mail.ejs"),
-//         data
-//       );
-
-//       // Send the activation email
-//       await sendMail({
-//         email: user.email,
-//         subject: "Activate your email",
-//         template: "activation-mail.ejs",
-//         data,
-//         options: {
-//           httpsAgent: new https.Agent({
-//             rejectUnauthorized: false,
-//           }),
-//         },
-//       });
-
-//       res.status(201).json({
-//         success: true,
-//         message: `Please check your email: ${user.email} to activate your account`,
-//         activationToken: activationToken.token,
-//       });
-//     } catch (error: any) {
-//       return next(new ErrorHandler(error.message, 500));
-//     }
-//   }
-// );
 
 interface IActivationToken {
   token: string;
@@ -437,6 +391,18 @@ export const updateUserAvatar = catchAsyncError(
         success: true,
         user,
       });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+// get all users - only for the admins
+
+export const getAllUsersAnalytics = catchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await getAllUsersService(res);
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
     }

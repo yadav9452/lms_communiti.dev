@@ -19,4 +19,9 @@ notificationRoute.put(
   authorizeRoles("admin"),
   updateNotificationsAdmin
 );
+// notificationRoute.get(
+//   "/get-all-notifications",
+//   isAuthenticated,
+//   authorizeRoles("admin")
+// );
 export default notificationRoute;
