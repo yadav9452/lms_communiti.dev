@@ -5,6 +5,7 @@ import {
   addQuestionToCourseData,
   addReplyToReview,
   addReviewDataToCourse,
+  deleteCourseByAdmin,
   editCourses,
   getAllCourseWithoutPurchasing,
   getAllCoursesAnalytics,
@@ -12,7 +13,6 @@ import {
   getSingleCourseWithoutPurchasing,
   uploadCourses,
 } from "../controllers/course.controller";
-import { updateUserRoleByAdmin } from "../controllers/user.controller";
 
 const courseRouter = express.Router();
 // create a new course
@@ -54,5 +54,10 @@ courseRouter.get(
   authorizeRoles("admin"),
   getAllCoursesAnalytics
 );
-
+courseRouter.delete(
+  "/delete-course-by-admin/:id",
+  isAuthenticated,
+  authorizeRoles("admin"),
+  deleteCourseByAdmin
+);
 export default courseRouter;
