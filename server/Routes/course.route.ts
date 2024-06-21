@@ -12,6 +12,7 @@ import {
   getSingleCourseWithoutPurchasing,
   uploadCourses,
 } from "../controllers/course.controller";
+import { updateUserRoleByAdmin } from "../controllers/user.controller";
 
 const courseRouter = express.Router();
 // create a new course
@@ -52,6 +53,12 @@ courseRouter.get(
   isAuthenticated,
   authorizeRoles("admin"),
   getAllCoursesAnalytics
+);
+courseRouter.put(
+  "/update-user-role",
+  isAuthenticated,
+  authorizeRoles("admin"),
+  updateUserRoleByAdmin
 );
 
 export default courseRouter;

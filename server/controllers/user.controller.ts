@@ -15,7 +15,11 @@ import {
   sendToken,
 } from "../utlis/jst";
 import { redis } from "../utlis/redis";
-import { getAllUsersService, getUserById } from "../services/user.service";
+import {
+  getAllUsersService,
+  getUserById,
+  updateUserRoleByAdminService,
+} from "../services/user.service";
 
 interface IRegistrationBody {
   name: string;
@@ -403,6 +407,18 @@ export const getAllUsersAnalytics = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       await getAllUsersService(res);
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+// update user role -- only for the admins
+export const updateUserRoleByAdmin = catchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id, role } = req.body;
+      updateUserRoleByAdminService(res, id, role);
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
     }
