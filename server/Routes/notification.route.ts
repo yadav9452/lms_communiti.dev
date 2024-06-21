@@ -1,6 +1,9 @@
 import express from "express";
 import { authorizeRoles, isAuthenticated } from "../middleware/auth";
-import { getAllNotificationsAdmin } from "../controllers/notification.controller";
+import {
+  getAllNotificationsAdmin,
+  updateNotificationsAdmin,
+} from "../controllers/notification.controller";
 
 const notificationRoute = express.Router();
 
@@ -9,5 +12,11 @@ notificationRoute.get(
   isAuthenticated,
   authorizeRoles("admin"),
   getAllNotificationsAdmin
+);
+notificationRoute.put(
+  "/update-notifications/:id",
+  isAuthenticated,
+  authorizeRoles("admin"),
+  updateNotificationsAdmin
 );
 export default notificationRoute;
