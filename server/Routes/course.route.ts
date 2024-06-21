@@ -54,11 +54,5 @@ courseRouter.get(
   authorizeRoles("admin"),
   getAllCoursesAnalytics
 );
-courseRouter.put(
-  "/update-user-role",
-  isAuthenticated,
-  authorizeRoles("admin"),
-  updateUserRoleByAdmin
-);
 
 export default courseRouter;

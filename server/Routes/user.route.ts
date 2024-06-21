@@ -3,6 +3,7 @@ import {
   SocialAuth,
   UpdateUserInfo,
   activateUser,
+  deleteUserByAdmin,
   getAllUsersAnalytics,
   getUserInfo,
   loginUser,
@@ -11,6 +12,7 @@ import {
   updateAccessToken,
   updateUserAvatar,
   updateUserPassword,
+  updateUserRoleByAdmin,
 } from "../controllers/user.controller";
 import { authorizeRoles, isAuthenticated } from "../middleware/auth";
 
@@ -42,6 +44,19 @@ userRouter.get(
   isAuthenticated,
   authorizeRoles("admin"),
   getAllUsersAnalytics
+);
+
+userRouter.put(
+  "/update-user-role",
+  isAuthenticated,
+  authorizeRoles("admin"),
+  updateUserRoleByAdmin
+);
+userRouter.delete(
+  "/delete-user-by-admin/:id",
+  isAuthenticated,
+  authorizeRoles("admin"),
+  deleteUserByAdmin
 );
 
 export default userRouter;
