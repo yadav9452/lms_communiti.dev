@@ -124,34 +124,34 @@ export const editLayout = catchAsyncError(
       }
 
       switch (normalizedType) {
-        case "banner":
-          if (!image || !title || !subTitle) {
-            return next(
-              new ErrorHandler("Missing required fields for Banner", 400)
-            );
-          }
-          try {
-            if (existingLayout) {
-              await cloudinary.v2.uploader.destroy(
-                existingLayout.image.public_id
-              );
-            }
-            const myCloud = await cloudinary.v2.uploader.upload(image, {
-              folder: "layout",
-            });
-            newLayout = {
-              type: normalizedType,
-              image: {
-                public_id: myCloud.public_id,
-                url: myCloud.secure_url,
-              },
-              title,
-              subTitle,
-            };
-          } catch (error) {
-            return next(new ErrorHandler("Image upload failed", 500));
-          }
-          break;
+        // case "banner":
+        //   if (!image || !title || !subTitle) {
+        //     return next(
+        //       new ErrorHandler("Missing required fields for Banner", 400)
+        //     );
+        //   }
+        //   try {
+        //     if (existingLayout) {
+        //       await cloudinary.v2.uploader.destroy(
+        //         existingLayout.image.public_id
+        //       );
+        //     }
+        //     const myCloud = await cloudinary.v2.uploader.upload(image, {
+        //       folder: "layout",
+        //     });
+        //     newLayout = {
+        //       type: normalizedType,
+        //       image: {
+        //         public_id: myCloud.public_id,
+        //         url: myCloud.secure_url,
+        //       },
+        //       title,
+        //       subTitle,
+        //     };
+        //   } catch (error) {
+        //     return next(new ErrorHandler("Image upload failed", 500));
+        //   }
+        //   break;
 
         case "faq":
           try {
