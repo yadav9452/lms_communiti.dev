@@ -4,7 +4,7 @@ import ErrorHandler from "../utlis/errorHandler";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { redis } from "../utlis/redis";
 
-// authenticates user
+// authenticated user
 export const isAuthenticated = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     // access token
@@ -30,7 +30,9 @@ export const isAuthenticated = catchAsyncError(
     const user = await redis.get(decoded?.id);
     // console.log("redis user", user);
     if (!user) {
-      return next(new ErrorHandler("user not found", 400));
+      return next(
+        new ErrorHandler("Please login to access this resource", 400)
+      );
     }
 
     req.user = JSON.parse(user);
